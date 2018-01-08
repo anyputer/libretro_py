@@ -118,6 +118,8 @@ static retro_input_state_t NETRETROPAD_CORE_PREFIX(input_state_cb);
 static uint16_t *frame_buf = NULL;
 static Py_buffer py_buffer = {0};
 static PyObject *py_memview = NULL;
+static PyObject *py_module;
+static PyObject *py_retro_run_func;
 
 static struct descriptor joypad = {
    .device = RETRO_DEVICE_JOYPAD,
@@ -146,27 +148,10 @@ static struct descriptor *descriptors[] = {
 
 void py_retro_run(unsigned input_state)
 {
-   PyObject *module, *func;
-
-   PySys_SetPath(L".");
-
-   module = PyImport_ImportModule("button_test");
-
-   if (!module)
-   {
-      log_cb(RETRO_LOG_ERROR, "Could not find python module.\n");
+   if (!py_retro_run_func)
       return;
-   }
 
-   func = PyObject_GetAttrString(module, "retro_run");
-
-   if (!func)
-   {
-      log_cb(RETRO_LOG_ERROR, "Could not find python function in module.\n");
-      return;
-   }
-
-   PyObject_CallFunction(func, "O:i:i:I", py_memview, WIDTH, HEIGHT, input_state);
+   PyObject_CallFunction(py_retro_run_func, "O:i:i:I", py_memview, WIDTH, HEIGHT, input_state);
 }
 
 void NETRETROPAD_CORE_PREFIX(retro_init)(void)
@@ -177,6 +162,23 @@ void NETRETROPAD_CORE_PREFIX(retro_init)(void)
 
    Py_SetProgramName(L"button_test");
    Py_Initialize();
+   PySys_SetPath(L".");
+
+   py_module = PyImport_ImportModule("button_test");
+
+   if (!py_module)
+   {
+      log_cb(RETRO_LOG_ERROR, "Could not find python module.\n");
+      return;
+   }
+
+   py_retro_run_func = PyObject_GetAttrString(py_module, "retro_run");
+
+   if (!py_retro_run_func)
+   {
+      log_cb(RETRO_LOG_ERROR, "Could not find python function in module.\n");
+      return;
+   }
 
    frame_buf = (uint16_t*)calloc(WIDTH * HEIGHT, sizeof(uint16_t));
 

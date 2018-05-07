@@ -117,9 +117,9 @@ CFLAGS += $(shell pkg-config --cflags python3)
 LDFLAGS += $(shell pkg-config --libs python3)
 
 ifneq (,$(findstring qnx,$(platform)))
-CFLAGS += -Wc,-std=c99
+CFLAGS += -Wc,-std=gnu99
 else
-CFLAGS += -std=c99
+CFLAGS += -std=gnu99
 endif
 
 all: $(TARGET)
